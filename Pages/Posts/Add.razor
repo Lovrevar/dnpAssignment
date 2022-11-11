@@ -1,0 +1,54 @@
+﻿@page "/posts/add"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IPostService PostService
+@inject NavigationManager NavigationManager
+
+<h1>Create Post</h1>
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <div class="form-row">
+        <div class="form-group col">
+            <label>Title</label>
+            <InputText @bind-Value="model.Title" class="form-control" />
+            <ValidationMessage For="@(() => model.Title)" />
+        </div>
+        <div class="form-group col">
+            <label>Content</label>
+            <InputText @bind-Value="model.Content" class="form-control" />
+            <ValidationMessage For="@(() => model.Content)" />
+        </div>
+    </div>
+    <div class="form-group">
+        <button disabled="@loading" class="btn btn-primary">
+            @if (loading) 
+            {
+                <span class="spinner-border spinner-border-sm mr-1"></span>
+            }
+            Save
+        </button>
+        <NavLink href="posts" class="btn btn-link">Cancel</NavLink>
+    </div>
+</EditForm>
+
+@code {
+    private AddPost model = new AddPost();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await PostService.Add(model);
+            AlertService.Success("Post added successfully", keepAfterRouteChange: true);
+            NavigationManager.NavigateTo("posts");
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

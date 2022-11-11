@@ -1,0 +1,73 @@
+﻿@page "/posts/edit/{Id}"
+@attribute [Authorize]
+@inject IAlertService AlertService
+@inject IPostService PostService
+@inject NavigationManager NavigationManager
+
+<h1>Edit Post</h1>
+@if (model != null)
+{
+    <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+        <DataAnnotationsValidator />
+        <div class="form-row">
+            <div class="form-group col">
+                <label>Title</label>
+                <InputText @bind-Value="model.Title" class="form-control" />
+                <ValidationMessage For="@(() => model.Title)" />
+            </div>
+            <div class="form-group col">
+                <label>Content</label>
+                <InputText @bind-Value="model.Content" class="form-control" />
+                <ValidationMessage For="@(() => model.Content)" />
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <button disabled="@loading" class="btn btn-primary">
+                @if (loading) 
+                {
+                    <span class="spinner-border spinner-border-sm mr-1"></span>
+                }
+                Save
+            </button>
+            <NavLink href="posts" class="btn btn-link">Cancel</NavLink>
+        </div>
+    </EditForm>
+}
+else
+{
+    <div class="text-center p-3">
+        <span class="spinner-border spinner-border-lg align-center"></span>
+    </div>
+}
+
+@code {
+    private EditPost model;
+    private bool loading;
+
+    [Parameter]
+    public string Id { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var post = await PostService.GetById(Id);
+        model = new EditPost(post);
+    }
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await PostService.Update(Id, model);
+            AlertService.Success("Update successful", keepAfterRouteChange: true);
+            NavigationManager.NavigateTo("posts");
+        }
+        catch (Exception ex)
+        {
+            AlertService.Error(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

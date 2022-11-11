@@ -1,0 +1,69 @@
+﻿@page "/posts"
+@attribute [Authorize]
+@inject IPostService PostService
+
+<h1>Posts</h1>
+<NavLink href="posts/add" class="btn btn-sm btn-success mb-2">Add Post</NavLink>
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th style="width: 30%">Title</th>
+            <th style="width: 30%">Content</th>
+            <th style="width: 10%"></th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (posts != null)
+        {
+            foreach (var post in posts)
+            {
+                <tr>
+                    <td>@post.title</td>
+                    <td>@post.content</td>
+                    <td style="white-space: nowrap">
+                        <NavLink href="@($"posts/edit/{post.postId}")" class="btn btn-sm btn-primary mr-1">Edit</NavLink>
+                        <button @onclick="@(() => DeletePost(post.title))" disabled="@post.IsDeletingPost" class="btn btn-sm btn-danger btn-delete-post">
+                            @if (post.IsDeletingPost) 
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <span>Delete</span>
+                            }
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+        @if (loading)
+        {
+            <tr>
+                <td colspan="4" class="text-center">
+                    <span class="spinner-border spinner-border-lg align-center"></span>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private bool loading;
+    private IList<Post> posts;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        posts = await PostService.GetAllPosts();
+        loading = false;
+    }
+
+    private async void DeletePost(string id) 
+    {
+        var post = posts.First(x => x.postId.Equals(id));
+        post.IsDeletingPost = true;
+        await PostService.Delete(id);
+        posts.Remove(post);
+        StateHasChanged();
+    }
+}
